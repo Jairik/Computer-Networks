@@ -1,2 +1,5 @@
-# Computer-Networks
- Work and various exercises pertaining to Computer Networks
+# Computer Networks
+
+Holds programs, papers, research, and homework regarding Computer Networks. [^1]
+
+[^1]: README to be updated later once more stuff is in here.

@@ -1,0 +1,351 @@
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{verbatim}
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+% Title, Author, Problems/Date, ect (Stupid 'fix' but whatever
+\title{Computer Networks - Homework 1}
+\author{JJ McCauley \\ 2/17/25}
+\date{Chapter 1's Problems: 6,10,11,12,20,31}
+
+\begin{document}
+\maketitle
+
+
+% Labeling sections with question number (adjusting counter)
+\setcounter{section}{5}
+% QUESTION 6
+\section{Propagation delay and transmission delay}
+\subsection{Part a}
+The propagation delay would be as follows:
+\[
+d_{\text{prop}} = \frac{m}{s}
+\]
+where s = Propagation Speed, and m = Distance  Between Hosts. This represents the time it takes for the first but of the packet to travel from Host A to Host B.
+\subsection{Part b}
+The transmission delay, which is the time required to push all bits of a packet onto the link, can be defined as:
+\[
+d_{\text{trans}} = \frac{L}{R}
+\]
+where L = packet size (in bits) and R = Transmission Rate (in bits per second, bps).
+\subsection{Part c}
+The end-to-end delay is the total time it takes for a packet to travel from the \textbf{sending host (A)} to the \textbf{receiving host (B)}. This can be modeled as:
+\[
+d_{\text{total}} = d_{\text{trans}} + d_{\text{prop}}
+\]
+In the context of L, R, m, and s, this can be denoted as:
+\[
+d_{\text{total}} = \frac{L}{R} + \frac{m}{s}
+\]
+\subsection{Part d}
+At time $t = d_{\text{trans}}$, the last bit of the packet is just leaving Host A and entering the transmission link. Since $d_{\text{trans}}$ is the time it takes to push all bits of the packet to the transmission link, when $t = d_{\text{trans}}$, the last bit just started going across the link. The first bit is already traveling towards \textbf{Host B}, but the last bit has not yet reached the destination.
+\subsection{Part e}
+If $d_{\text{prop}} > d_{\text{trans}}$, then at time $t = d_{\text{trans}}$, the first bit has entered the link, but it has not yet reached \textbf{Host B}. This leaves the first bit somewhere in the middle of the link between \textbf{Host A} and \textbf{Host B}.
+\subsection{Part f}
+If $d_{\text{prop}} < d_{\text{trans}}$, then at time $t = d_{\text{trans}}$, the first bit has already been received by \textbf{Host B}. Specifically, the first but would reach \textbf{Host B} at $t = d_{\text{prop}}$.
+\subsection{Part g}
+If we know that $s = 2.5 * 10^8$, $L = 1500 $ bytes, and $R = 10$ Mbps, then we can use the values and the equation $d_{\text{prop}} = d_{\text{trans}}$ to find the distance. This can be broken down into the formulas:
+\[
+\frac{m}{s} = \frac{L}{R}
+\]
+with values of:
+\[
+\frac{m}{2.5 * 10^8} = \frac{1500}{10 * 10^6}
+\]
+After solving this equation for $m$, it is revealed that $m = 300,000$ meters.
+
+\setcounter{section}{9}
+\section{End-to-End Delay}
+In order to compute the total End-To-End delay, we can use the equation
+\[
+d_{\text{total}} = d_{\text{trans total}} + d_{\text{prop total}} + d_{\text{proc total}} 
+\]
+In order to determine this, we must first look at the known values. We know that $L = 1500 * 8 = 12000 $ bits, $s = 2.5 * 10^8$ m/s, $R = 2.5 * 10^6$ bps, and $d_{\text{proc}} = 3 * 10^{-3} $ s. Additionally, there are variable Link distances, with $d_{\text{1}} = 5,000,000$ m, $d_{\text{2}} = 4,000,000$ m, and $d_{\text{3}} = 1,000,000$ m. 
+\\Firstly, we can compute the transmission delays with $d_{\text{1}} = \frac{L}{R} * 3$ (since all three links have the same transmission rate), which turns out to be:
+\[
+d_{\text{trans total}} = \frac{12,000}{2,500,00} * 3 = .0048 \text{ sec} * 3 = 14.4 \text{ms}
+\]
+Then, we can calculate the propagation delays ($d_{\text{prop total}}$) by plugging in the various distances in the following equation, and adding them:
+\[
+d_{\text{prop i}} = \frac{distance}{2.5 * 10^8} 
+\]
+After plugging in for each value, we get:
+\[
+.02 \text{ sec} + .016 \text{ sec} + .004 \text{ sec} = 40 \text{ ms} 
+\]
+Now, knowing that there are two packet switches, we can calculate $d_{\text{proc total}}$ through the following equation:
+\[
+d_{\text{proc total}} = 2 * 3 \text{ms} = 6 \text{ms}
+\]
+Now that we have all of the information, we can plug each total into the initial equation to get the \textbf{total End-to-End Delay}.
+\[
+d_{\text{total}} = 14.4 \text{ ms} + 40 \text{ ms} + 6 \text{ ms} = 60.4 \text{ ms} 
+\]
+Therefore, the \textbf{total End-to-End Delay is 60.4 ms}.
+
+\section{End-to-End Delay Expanded}
+Under these new assumptions, we can use the equation
+\[
+d_{\text{total}} = d_{\text{trans}} + d_{\text{prop total}} 
+\]
+to find the total End-to-End delay. Since this method would only involve the use of one transmission rate, we can use the value of \textbf{4.8 ms} for the transmission rate, and we can use the previous total propagation rate of \textbf{40 ms}. Under these assumptions, we get:
+\[
+d_{\text{total}} = 4.8 \text{ms} + 40 \text{ms} = 44.8 \text{ms} 
+\]
+Therefore, \textbf{the new End-to-End Delay would be 44.8 ms}.
+
+\section{Queuing Delay}
+To calculate queuing delay, we must first look at the variables given. We know that $L = 1500 $ bytes $= 12,000$ bits, $R = 2.5$ Mbps $= 2.5 * 10^6$ bps, and one packet is halfway transmitted, $\frac{L}{2}$ bits sent. Additionally, four full packets are waiting in the queue. \\
+To determine the \textbf{transmission rate}, we can use the following equations:
+\[
+d_{\text{trans}} = \frac{L}{R} = \frac{12,000}{2.5*10^6} = .0048 \text{ sec} = 4.8 \text{ ms}
+\]
+To determine the total queuing delay, we can use the equation $d_{\text{queue}} = d_{\text{remaining}} + d_{\text{queued}}$\\
+To get the transit time of the remaining half packet, we can use the following equation:
+\[
+d_{\text{remaining}} = \frac{L-x}{R} = \frac{6,000}{2.5*10^6} = .0024 \text{ seconds} = 2.4 \text{ ms}
+\]
+Then, to get the time for the remaining four full packets, we can simply multiply the transit time previously calculated, such that:
+\[
+d_{\text{queued}} = 4 * 4.8 \text{ ms} = 19.2 \text{ ms}
+\]
+Once plugging these values into the final equation, we get 
+\[
+d_{\text{queue}} = d_{\text{remaining}} + d_{\text{queued}} = 2.4 \text{ ms} + 19.2 \text{ ms} = 21.6 \text{ ms}
+\]
+Leaving us with a \textbf{total queuing delay of 21.6 ms}. Generally, an equation can be derived by combining these calculations, resulting in:
+\[
+d_{\text{queue}} = \frac{L-x}{R} + n * \frac{L}{R}
+\]
+
+\setcounter{section}{19}\
+\section{Throughput General Expression}
+This problem involves $M$ client-server pairs, with $R_{\text{s}}$ representing the rate for the server link, $R_{\text{c}}$ representing the rate for the client link, and $R$ representing the rate for the network link. Additionally, we assume that all other links have abundant capacity (no bottlenecks) and no other traffic is present, other than the $M$ client-server pairs. \\
+We know that throughput is limited by the \textbf{slowest link} in the path. Knowing this, we can derive that, with $M$ servers:
+\[
+\text{The total server-side rate is } M R_{\text{s}}
+\]
+\[
+\text{The total client-side rate is } M R_{\text{c}}
+\]
+Since the network link capacity of $R$ must be divided by $M$ connections, each client-server pair gets at most: 
+\[
+\frac{R}{M}
+\]
+Given these three values, we know that the actual throughput will be bottle-necked by the slowest rate, which can be found using
+\[
+T = \text{min}(R_{\text{s}}, R_{\text{c}}, \frac{R}{M})
+\]
+Lastly, since there are $M$ client-server pairs, \textbf{the total throughput can be calculated as:}
+\[
+T_{\text{total}} = M * \text{min}(R_{\text{s}}, R_{\text{c}}, \frac{R}{M})
+\]
+
+\setcounter{section}{30}
+\section{Segmentation}
+For this question, we will firstly consider that each message is \textbf{$10^6$ bits long}, with each link being \textbf{5 Mbps}, or $5*10^6$ bps
+\subsection{Part a - Sending Message Without Segmentation}
+Firstly, we must determine the transmission rate, which can be calculated as:
+\[
+d_{\text{trans}} = \frac{L}{R} = \frac{10^6}{5*10^6} = .2 \text{ sec} = 200 \text{ ms}
+\]
+This time (\textbf{200 ms}) represents the time it would take for the packet to travel from the source host to the first packet switch. Now, since this uses a \textbf{store-and-forward} method, it must completely transfer the packet before forwarding to the next link. Therefore, the calculation is fairly easy:
+\[
+d_{\text{total}} = N * d_{\text{trans}} = 3 * 200 \text{ ms} = 600 \text{ms} 
+\]
+where N = the number of links. \\
+Thus, the total \textbf{end-to-end delay without segmentation would be 600 ms}. 
+\subsection{Part b - First Packets when Segmenting into 100 Packets}
+Now, we divide the packet into 100 packets such that each packet $= 10,000$ bits.
+\[
+d_{\text{trans}} = \frac{L}{R} = \frac{10,000}{5*10^6} = .002 \text{ sec} = 2 \text{ ms}
+\]
+This concludes that each packet takes \textbf{2 ms} to be transmitted to a link. Therefore, the \textbf{first packet finishes transmission at 2 ms}. When the first packet moves to the second link, the second packet begins transmission, meaning that the \textbf{second packet finishes at 4 ms} ($.2 \text{ ms} * 2$).
+\subsection{Part c - Total Transmission Time when Segmenting}
+In order to calculate the total delay, we know that $N = 3$, the total number of links, $M = 100$, the total number of packets, and $d_{\text{trans per packet}} = 2 \text{ ms}$. Using the following equation to receive the total transmission time:
+\[
+d_{\text{total}} = d_{\text{trans per packet}} + (N - 1) * d_{\text{trans per packet}} + (M - 1) * d_{\text{trans per packet}} 
+\]
+We can substitute the known numbers to receive the total delay:
+\[
+d_{\text{total}} = 2 \text{ ms} + (3-1) * 2 \text{ ms} + (100-1) * 2 \text{ ms} = 204 \text{ ms}
+\]
+This leaves us with a \textbf{total delay when using segmentation to be 204 ms}, which is significantly \textit{less} than the 600 ms delay obtained when not using segmentation. This is because the links does not have to wait for the entire packet to be received, instead being able to send it through piece by piece without having to wait.
+\subsection{Part d - Benefits of Message Segmentation}
+In addition to \textbf{reducing delay}, Message segmentation allows for \textbf{improved link utilization}, with each link constantly active with little idle time, and \textbf{better error handling}, with errors in transmission only requiring one small packet to be resent rather than the entire large file.
+\subsection{Part e - Drawbacks of Message Segmentation}
+When using message segmentation, it is important to consider \textbf{increased overhead}, as each packet needs its own metadata which increases the overall total data sent, \textbf{increased complexity for end host} as it must reassemble all the packets in the correct order, and \textbf{higher packet loss risk} as each packet can individually be lost.
+
+
+
+\begin{comment}
+\section{Available residential access technologies in Salisbury}
+%
+In Salisbury, there are various residential access technologies with various rates and speeds.
+
+\subsection{Cable Internet: Xfinity}
+
+Xfinity, a very popular provider in Salisbury, has numerous different plans with various downstream, upstream, and monthly prices.
+\begin{enumerate}
+    \item "Connect" Plan \begin{enumerate}
+        \item Downstream Rate: 300 Mbps
+        \item Upstream Rate: 5 Mbps
+        \item Monthly Price: Around \$30
+    \end{enumerate}
+    \item "Gigabit" Plan \begin{enumerate}
+        \item Downstream Rate: 1000 Mbps
+        \item Upstream Rate: 15 Mbps
+        \item Monthly Price: Around \$65-\$80 
+    \end{enumerate}
+    \item "Gigabit Extra" \begin{enumerate}
+        \item Downstream Rate: 1200 Mbps
+        \item Upstream Rate: 35 Mbps
+        \item Monthly Price: Around \$75-\$105
+    \end{enumerate}
+    \item "Gigabit x2" \begin{enumerate}
+        \item Downstream Rate: 2000 Mbps
+        \item Upstream Rate: 300 Mbps
+        \item Monthly Price: Around \$95
+    \end{enumerate}
+\end{enumerate}
+
+\subsection{5G Home Internet: T-Mobile}
+T-Mobile offers various plans with different metrics, per \href{https://www.t-mobile.com/home-internet/policies/internet-service/network-speed-performance-metricsper}{T-Mobile's Metrics}.
+\begin{enumerate}
+    \item "Rely" Plan \begin{enumerate}
+        \item Downstream Rate: 87-318 Mbps
+        \item Upstream Rate: 14-56 Mbps
+        \item Monthly Price: Around \$50
+    \end{enumerate}
+    \item "Amplified" Plan  \begin{enumerate}
+        \item Downstream Rate: 133-415 Mbps
+        \item Upstream Rate: 12-55 Mbps
+        \item Monthly Price: Around \$60
+    \end{enumerate}
+    \item "All-in" Plan \begin{enumerate}
+        \item Downstream Rate: 133-415 Mbps
+        \item Upstream Rate:12-55 Mbps
+        \item Monthly Price: Around \$70
+    \end{enumerate}
+\end{enumerate}
+In contrast to the wide-spread availability of Xfinity's cable internet, 5G home internet has significantly less availability, which is important to note.
+
+\subsection{Fiber Optic: Glofiber}
+In addition to other providers, Glofiber has various plans with different speeds and prices.
+\begin{enumerate}
+    \item \$70/month Plan \begin{enumerate}
+        \item Downstream Rate: 600 Mbps
+        \item Upstream Rate: ?
+    \end{enumerate}
+    \item \$85/month Plan \begin{enumerate}
+        \item Downstream Rate: 1200 Mbps
+        \item Upstream Rate: ?
+    \end{enumerate}
+    \item \$140/month Plan \begin{enumerate}
+        \item Downstream Rate: 2400 Mbps
+        \item Upstream Rate: ?
+    \end{enumerate}
+    \item \$290/month Plan \begin{enumerate}
+        \item Downstream Rate: 5000 Mbps
+        \item Upstream Rate: ?
+    \end{enumerate}
+\end{enumerate}
+
+\subsection{Other Providers}
+In addition to the more well-known providers, there are various other providers in Salisbury.
+\begin{itemize}
+    \item Fixed Wireless Internet: Bloosurf \begin{enumerate}
+        \item Downstream Rate: Up to 100 Mbps
+        \item Upstream Rate: ?
+        \item Monthly Price: Not specified
+    \end{enumerate}
+    \item Satellite Internet: HughesNet \begin{enumerate}
+        \item Downstream Rate: Up to 100 Mbps
+        \item Upstream Rate: ?
+        \item Monthly Price: Starts at \$49.99
+    \end{enumerate}
+    \item Satellite Internet: Starlink \begin{itemize}
+        \item Downstrate Rate: Up to 220 Mbps
+        \item Upstream Rate: ?
+        \item Monthly Price: Starting at \$120
+    \end{itemize}
+\end{itemize}
+
+\setcounter{section}{9}
+\section{Comparing popular wireless internet access technologies}
+Today, the most popular wireless internet access technologies are Wi-Fi (WLAN), Celluar Networks, Fixed Wireless Access (FWA), and Satellite Internet.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{3.5cm}|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
+        \hline
+        \textbf{Wi-Fi} & \textbf{Cellular Networks} & \textbf{Fixed Wireless} & \textbf{Satellite} \\
+        \hline 
+        A short-range wireless technology that allows multiple devices to connect to the internet through a router connected to a broadband service.
+        & Cellular Internet provides mobile broadband through cell towers, allowing connection anywhere with coverage
+        & Fixed wireless delivers broadband to homes and businesses using radio signals from nearby towers.
+        & Satellite internet transmits data between a satellite dish and orbiting satellites \\
+        \hline
+        Very fast speeds, up to 9.6 Gbps
+        & Moderately fast speeds, around 10-3000 Mbps
+        & Slower speeds, typically around 25-1000 Mbps
+        & Slow speeds, around 25-250 Mbps \\
+        \hline
+        Availability Limited to router range
+        & Wide/Expanding coverage
+        & Limited Availability (requires nearby tower)
+        & Available almost anywhere \\
+        \hline
+        Best for home, office, and public spaces
+        & Best for mobile internet, rural areas, and home internet (5G)
+        & Best for rural homes and businesses
+        & Best for remote and very rural areas where access is limited \\
+        \hline
+    \end{tabular}
+    \caption{Wireless Internet Access Technologies Comparison}
+    \label{tab:my_label}
+\end{table}
+In summary: \begin{itemize}
+    \item \textbf{Wi-Fi} is best used for local, high-speed wireless internet
+    \item \textbf{4G/5G Celluar Networks} are best for mobility
+    \item \textbf{Fixed Wireless} offers a strong broadband alternative in areas without fiber or cable capabilities
+    \item \textbf{Satellite} is a last-resort option for those who don't have access to any other networks
+\end{itemize}
+Each wireless internet access technology has various different use cases, however Wi-Fi is commonly the most popular and widespread used in non-remote areas for fast internet connectivity.
+
+\section{Determining end-to-end delay for packet of Length L}
+Assuming that there is exactly one packet switch between the sending and receiving host and that the switch uses a \textbf{store-and-forward approach}, the total end-to-end delay for a packet of length L would be as follows:
+\[
+d_{\text{total}} = \frac{L}{R_1} + \frac{L}{R_2}
+\]
+where \( R_1 \) and \( R_2 \) represents the transmission rates between the host and the switch, and the switch to the host, respectively.   
+Since the store-and-forward approach delay happens twice in a two-link network (the switch must fully receive the packet before forwarding it), the total delay formula are the two delay formulas for each switch added together.
+
+\section{Advantages of Circuit Switching Techniques}
+\subsection{Circuit-Switching vs. Packet-Switching Networks}
+In circuit switching, a dedicated communication path is established prior to transmission, remaining open for the entire session and reserving bandwidth for the duration. In contrast, Packet-Switching does not set up a dedicated path, with each packet potentially taking different routes and only using resources as needed. Although Packet-Switching consumes less resources, Circuit-Switching has significantly less latency, no packet loss, and ensures consistent performance (not subject to performance impacts from congestion).
+\subsection{TDM vs FDM in Circuit-Switched Networks}
+Both TDM (Time-Division Multiplexing) and FDM (Frequency-Division Multiplexing) are used in circuit-switching networks, aiming to allow multiple users to share a network. FDM allows for users to transmit data in alternating turns, while FDM assigns each user a separate channel. Unlike FDM, TDM is advantageous in that it dynamically allocates bandwidth and TDM avoids interference. 
+\setcounter{section}{19}
+\section{Describing packet process}
+If end system A wants to send a large file to end system B, end system A will firstly split the file into smaller chunks, then add headers to each split with important information, then send each packet off individually to reach end system B. When each of these packets arrives to a router, the router will look at the destination IP address to determine the best path to forward the packet. Packet switching is analogous to driving from one city to another in the sense that there is no dedicated road to drive on (no fixed path for each packet), the driver will ask for directions and reroute at each step (router determines where to send each packet based on network conditions), dynamic paths are based on conditions (such as a congested link), and different packets may take different routes to arrive at a destination, although they may arrive in a different order.
+
+\setcounter{section}{30}
+\section{}
+\end{comment}
+
+
+\end{document}

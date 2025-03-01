@@ -1,0 +1,193 @@
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{verbatim}
+\usepackage{placeins}    % for \FloatBarrier
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+% Title, Author, Problems/Date, ect (Stupid 'fix' but whatever)
+\title{Computer Networks - Homework 2}
+\author{JJ McCauley \\ 2/17/25}
+\date{Chapter 1's Problems: 3,7,8,9,22}
+
+\begin{document}
+\maketitle
+
+
+% Labeling sections with question number (adjusting counter)
+\setcounter{section}{2}
+% QUESTION 6
+\section{Transport and Application-layer protocols}
+In order for the HTTP client to retrieve the IP address from a URL, it must use the \textbf{DNS} protocol on the application layer to translate the URL to a valid IP. These DNS queries are then sent through the UDP in the transport layer. Once the IP address is acquired, the client is then able to establish a HTTP connection through TCP to receive the document.
+
+% QUESTION 7
+\setcounter{section}{6}
+\section{Calculating total time with RTT}
+In order to calculate the total time, we must add \textbf{DNS Lookup Time} and \textbf{TCP Connection Time}. \\
+In order to find total DNS delay, we must consider that visits for \textit{n} DNS servers can be considered as $\text{RTT}_{\text{1}} + \text{RTT}_{\text{2}} + ... + \text{RTT}_{\text{n}}$. Therefore:
+\[
+\text{Total DNS Delay} = \text{RTT}_{\text{1}} + \text{RTT}_{\text{2}} + ... + \text{RTT}_{\text{n}}
+\]
+Then, we must consider the TCP Connection Establishment. Since $\text{RTT}_{\text{0}}$ represents the time it takes for the client to send the HTTP request, as well as the time it takes for the client to receive the request, we can note the delay in this phase as:
+\[
+2 * \text{RTT}_{\text{0}}
+\]
+Therefore, the total overall time can be denoted as the following:
+\[
+\textbf{Total Time} = (\text{RTT}_{\text{1}} + \text{RTT}_{\text{2}} + ... + \text{RTT}_{\text{n}}) + 2 * \text{RTT}_{\text{0}}
+\]
+
+% Question 8
+\section{HTTP Transmission Time with Multiple Objects}
+\subsection{Non-persistent HTTP with no parallel TCP connections}
+With non-persistent HTTP and no TCP connections, then each object would need to be fetched over a separate TCP connection. Therefore, since there are 8 objects, then the total time would be $8 * \text{time for one object}$ .
+Since a connection must be made to send and receive the HTML file, with each transfer taking one RTT, then we know that each object will require two RTTs for each object. Therefore, \textbf{the total time for this scenario would be $2 * 8 = 16 \text{ RTTs}$}.
+\subsection{Non-persistent HTTP with 6 parallel connections}
+Since this approach uses non-persistent HTTP, then 2 connections will still be needed to fetch an HTML object (one for client to request, one for client to receive). Since \textbf{6} objects can be fetched at once, and there are 8 objects, we know that it must take two rounds of fetching to retrieve all files (first fetch for the first six objects, second fetch for the remaining two). Since each fetch will take two RTTs (request \& receive object), and we must account for the initial TCP connection, then \textbf{the total time for this scenario would be $2 \text{ RTTs}+ 2 \text{ RTTs} + 2 \text{ RTTs} = 6 \textbf{ RTTs}$}, which accounts for the two object fetches and the initial connection. This is significantly more efficient than the previous approach.
+\subsection{Persistent HTTP}
+When using persistent HTTP, then all HTML objects can be transferred at once. Therefore, it will take 1 RTT for HTML files (transfer all 8 in one go), and will require an RTT for the client requesting and receiving, respectively. Therefore, \textbf{the total time for this scenario would be $1 \text{ RTTs}+ 1 \text{ RTTs} + 1 \text{ RTTs} = 3 \textbf{ RTTs}$}. This approach is the most efficient by far, when compared to the previous approaches ($3 < 6 < 16$).
+
+% Question 9
+\section{Calculating Total Average Response Time}
+Firstly, we know that the average object size is 1,000,000 bits, the request rate is 16 requests/sec, and the internet delay is 3 seconds. 
+\subsection{Total Average Response Time without Cache}
+We know that the average access delay is models as
+\[
+\frac{\Delta}{1 - \Delta \beta}
+\]
+where $\Delta = \frac{\text{object size}}{\text{access link rate}} = \frac{1,000,000 \text{ bits}}{100 * 10^6 \text{bps}} = .01 \text{ sec}$ and $\beta = .01 \text{ sec} * 16 \text{ requests per second} = .16$. \\
+Plugging this into the equation, we get:
+\[
+\frac{.01}{1 - .16} = \frac{.01}{.84} = .011905 \text{ seconds}
+\]
+Then, we can use the known internet delay of 3 seconds to derive the following answer:
+\[
+{T_\textbf{avg, no cache}} = \text{Average Access Delay} + \text{Internet Delay} = .011905 \text{ sec} + 3 \text{ sec} = 3.011905 \textbf{ seconds}
+\]
+\subsection{Total Average Response Time with Cache}
+Now with cache with a miss rate of 0.4, we can recalculate the total average response time knowing that only the misses need to be considered when calculating $\beta$. To achieve this new number, we can multiply the request rate (16 requests per second) by the miss rate (.4), such that \
+\[
+\beta = 16 \text{ requests per second} * 0.4 \text{ miss rate} = 6.4 \text{ requests/second}. 
+\]
+Then, we can multiply this by $\Delta$ such that $6.4 \text{ requests per second} * .01 = .064$. Now, we can plug this into the Access Delay formula as follows:
+\[
+\text{Access Delay} = \frac{.01}{1 - .064} = \frac{.01}{.936} = .01068 \text{ seconds}
+\]
+Then, we can calculate the total delay when a cache hit occurs (knowing internet delay) through the following calculation:
+\[
+T_{\text{cache miss}} = .01068 \text{ sec}+ 3 \text{ sec} = 3.01068 \text{ sec}
+\]
+Know that we know the response time for cache misses, we can calculate the \textbf{total average time when caching} by finding the weighted sum via the following formula:
+\[
+T_{\textbf{avg, cache}} = (.6) (0 \text{sec}) + (.4) (T_{\text{cache miss}}) = 0 + .4 * 3.01068 = 1.2043 \text{ seconds}
+\]
+Note that cached responses will require 0 seconds for a hit, so it can essentially be disregarded. As we can see, when compared to the previous response, Caching can be significantly faster and reduce the total average response time immensely.
+
+% Question 22
+\setcounter{section}{21}
+\section{Minimum Distribution Time: Client-Server \& P2P}
+For this question, we know that we need to distribute a file of $F = 20 \text{ Gbits}$ to $N$ peers, where $N = 10, 100, 1000$. Additionally, we know it has an upload rate of $u = 300 \text{ Kbps}, 700 \text{ Kbps}, 2 \text{ Mbps}$, and an download rate of $d = 2 \text{ Mbps}$. \\
+In order to find Client-Server distribution $T_{\text{cs}}$ and P2P distribution $T_{\text{p2p}}$, we will use the following equations:
+\[
+T_{\text{cs}} = \text{max}\{\frac{F}{u}, \frac{F}{d}, \frac{NF}{u} \} 
+\]
+\[
+T_{\text{p2p}} = \text{max}\{\frac{F}{u}, \frac{F}{d}, \frac{NF}{u + Nu} \} 
+\]
+Prior to computing, we must firstly convert the units into bits or bits/sec, which will be used for the equation. For example, we must convert $F$ such that $F = 20 * 10^9 \text{ bits}$. \\
+Now, we can utilize these equations for each of the $N$ and $u$ cases in order to find the total computation time for both Client Server and P2P.
+\subsection{Client-Server Distribution Results}
+In the client-server architecture, only the server's upload rate $u_{\text{s}}$ is to be considered when performing the calculations, with $u_{\text{s}} = 30 * 10^6 \text{ bits/second}$. Therefore, we can derive the following table using N:
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{|c|c|c|c|c|}
+    \hline
+    N & $\frac{F}{d}$ & $\frac{F}{d}$ & $\frac{NF}{u}$ & $T_{\text{cs}}$ (seconds) \\ \hline
+    10 & 667 & 10,000 & 6,667 & \textbf{10,000} \\ \hline
+    100 & 667 & 10,000 & 66,667 & \textbf{66,667} \\ \hline
+    1000 & 667 & 10,000 & 666,667 & \textbf{666,667} \\ \hline
+  \end{tabular}
+  \caption{Client Server Distribution Results}
+\end{table}
+
+where $T_{\text{cs}}$ is derived from the maximum of the previous columns. We can then use these values in the final chart.
+
+% --- Client Server Distribution Results --- %
+\begin{center}
+  \includegraphics[width=.8\textwidth]{Client-Server-Distribution-Graph.png}
+\end{center}
+
+\subsection{P2P Distribution}
+In the P2P architecture, the upload rates $u$ must be considered. When plugging in the given numbers (with units adjusted) with each $N$ and $u$, and finding the max of the three fractions (as shown in the equation above), the following tables are produced:
+
+% Table for u = 300 * 10^3 bps
+\begin{table}[H]
+  \centering
+  \setlength{\tabcolsep}{8pt} % Adjust horizontal spacing
+  \begin{tabular}{|c|c|}
+    \hline
+    \(N\) & \(T_{\text{p2p}}\) (s) \\ \hline
+    10    & \textbf{10,000}      \\ \hline
+    100   & \textbf{33,333}      \\ \hline
+    1000  & \textbf{60,606}      \\ \hline
+  \end{tabular}
+  \caption{P2P Distribution Results for \(u = 300 \times 10^3\) bps}
+  \label{tab:p2p_300bps}
+\end{table}
+
+% Table for u = 700 bps
+\begin{table}[H]
+  \centering
+  \setlength{\tabcolsep}{8pt}
+  \begin{tabular}{|c|c|}
+    \hline
+    \(N\) & \(T_{\text{p2p}}\) (s) \\ \hline
+    10    & \textbf{10,000}      \\ \hline
+    100   & \textbf{20,000}      \\ \hline
+    1000  & \textbf{27,397}      \\ \hline
+  \end{tabular}
+  \caption{P2P Distribution Results for \(u = 700\) bps}
+  \label{tab:p2p_700bps}
+\end{table}
+
+% Table for u = 2000 bps
+\begin{table}[H]
+  \centering
+  \setlength{\tabcolsep}{8pt}
+  \begin{tabular}{|c|c|}
+    \hline
+    \(N\) & \(T_{\text{p2p}}\) (s) \\ \hline
+    10    & \textbf{10,000}      \\ \hline
+    100   & \textbf{10,000}      \\ \hline
+    1000  & \textbf{10,000}      \\ \hline
+  \end{tabular}
+  \caption{P2P Distribution Results for \(u = 2000\) bps}
+  \label{tab:p2p_2000bps}
+\end{table}
+
+% Graph at the bottom of the page
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{P2P-Distribution-Graph.png}
+  \caption{P2P Distribution Graph}
+  \label{fig:p2p_graph}
+\end{figure}
+
+As we can see, the P2P architecture significantly outperforms the Client-Server model. The speed of the P2P architecture increases as N peers increases, and decreases as the upload rate increases.
+
+
+
+\end{document}
