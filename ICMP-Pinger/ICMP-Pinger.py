@@ -65,13 +65,11 @@ def receiveOnePing(mySocket: socket, ID: int, timeout: float, destAddr: str) -> 
         if len(recPacket) < 28:
             return "Packet is too short"
 
-        '''TODO'''
         # Extract the ICMP Header
         icmpHeader = recPacket[20:28]  # Extract 8-byte ICMP Header, skipping 20-byte IP header
         icmpType, icmpCode, icmpChecksum, packetID, sequence = struct.unpack("bbHHh", icmpHeader)
         # Where icmpType should be 0 for Echo Reply, and packetID should match the ID from packet sent
         
-        '''TODO'''
         # Validate the ICMP Response
         if icmpType != 0 or packetID != ID:
             return "Not a valid ping response"
@@ -144,39 +142,44 @@ def ping(host: str, timeout: float =1) -> None:
     Parameters:
     host- The hostname or IP address to ping
     timeout: Timeout in seconds for each ping'''
-    global pings
+    global total_pings
     # timeout=1 means: If one second goes by without a reply from the server,
     # the client assumes that either the client's ping or the server's pong is lost
     dest = gethostbyname(host)
+    print("To End Pinging, press ctrl+C")
     print("Pinging " + dest + " using Python:\n")
 
     # Send ping requests to a server separated by approximately one second
     try:
         while True:
             delay = doOnePing(dest, timeout)
-            pings += 1
+            total_pings += 1
             print(delay)
             time.sleep(1)  # one second
         return delay
     except KeyboardInterrupt:
         print("\nPinging ended by user (keyboard interrupt)")
-        print(f"Total RTT for {pings} pings: {totalRTTs} ms")
-        print(f"Average RTT: {totalRTTs/pings} ms")
+        print(f"Packet Loss: {(((total_pings - successful_pings) / total_pings) * 100)}% (Success: {successful_pings}/{total_pings})")
+        print(f"Total RTT for {total_pings} pings: {totalRTTs} ms")
+        print(f"Average RTT: {totalRTTs/total_pings} ms")
         print(f"Max RTT: {maxRTT}")
-        print(f"Min RTT: {minRTT}")
+        print(f"Min RTT: {minRTT}\n")
 
 def calcRTTs(cur_rtt: int) -> None:
     ''' Updates the total, minimum, and max RTTs (global) for end statistics
     Parameters:
     cur_rtt- The current rtt'''
-    global totalRTTs, minRTT, maxRTT
+    global totalRTTs, minRTT, maxRTT, successful_pings
     if minRTT == 0 or cur_rtt < minRTT:
         minRTT = cur_rtt
     if maxRTT == 0 or cur_rtt > maxRTT:
         maxRTT = cur_rtt
     totalRTTs += cur_rtt
+    successful_pings += 1  # Aid in calculating packet loss, if RTT is calculated then successful
 
 # Test Program
-pings, totalRTTs, minRTT, maxRTT = 0, 0, 0, 0
-ping("jjmccauley.com")  # Testing own website
-# ping('127.0.0.1', timeout=1)  # Pinging local host for testing
+total_pings, successful_pings, totalRTTs, minRTT, maxRTT = 0, 0, 0, 0, 0
+HOST = "jjmccauley.com"
+# HOST = "127.0.0.1"  # Local Host
+TIMEOUT = 1  # Default value for now
+ping(HOST, timeout=TIMEOUT)  # Testing own website
