@@ -1,12 +1,16 @@
-''' Skeleton Code - just need to fill in the blanks basically '''
+''' ICMP Pinger - JJ McCauley - Last Updated 3/10/25 '''
 from socket import *  # Low-level networking (sockets)
 import os  # Retreive pids
 import sys  # Check the system platform
 import struct  # Packing/unpacking binary data into C-style structs
 import time  # Timing
 import select  # Monitoring socket events
+import statistics  # For easy RTT statistic calculations
+import argparse  # For accepting command line arguments
 
 ICMP_ECHO_REQUEST = 8  # IPCM type for Echo requests
+rtt_list = []  # List to hold various RTTs for statistics calculations
+total_pings = 0  # Total number of pings actually executed
 
 def checksum(source_string) -> int:
     ''' Computes the internet checksum used by ICMP for error detection
@@ -97,7 +101,7 @@ def receiveOnePing(mySocket: socket, ID: int, timeout: float, destAddr: str) -> 
             return "Request timed out when receiving."
         
         # Update RTTs (total, min, max)
-        calcRTTs(rtt)
+        rtt_list.append(rtt)
         
         # Return message containing rtt
         return f"Reply from {destAddr}: time={rtt}ms"
@@ -146,49 +150,58 @@ def doOnePing(destAddr: str, timeout: int) -> str:
     mySocket.close()
     return delay
 
-def ping(host: str, timeout: float =1) -> None:
-    ''' Resolves a hostname to an IP, repeatedly (indefinitely) pings every second, prints response time
+def ping(host: str = "127.0.0.1", timeout: float = 1, NUM_PINGS: int = 10**100) -> None:
+    ''' Resolves a hostname to an IP, repeatedly pings every second, prints response time
     Parameters:
     host- The hostname or IP address to ping
-    timeout: Timeout in seconds for each ping'''
+    timeout- Timeout in seconds for each ping
+    NUM_PINGS- The amount of pings to send to host, essentially set to infinity as default value '''
     global total_pings
     # timeout=1 means: If one second goes by without a reply from the server,
     # the client assumes that either the client's ping or the server's pong is lost
     dest = gethostbyname(host)
-    print("To End Pinging, press ctrl+C")
+    print("To end pinging early, press ctrl+c")
     print("Pinging " + dest + " using Python:\n")
 
     # Send ping requests to a server separated by approximately one second
     try:
-        while True:
+        for i in range(NUM_PINGS):
             delay = doOnePing(dest, timeout)
             total_pings += 1
             print(delay)
             time.sleep(1)  # one second
-        return delay
     except KeyboardInterrupt:
+        # Once user sends keyboard interrupt, show statistics
         print("\nPinging ended by user (keyboard interrupt)")
-        print(f"Packet Loss: {(((total_pings - successful_pings) / total_pings) * 100)}% (Success: {successful_pings}/{total_pings})")
-        print(f"Total RTT for {successful_pings} pings: {totalRTTs} ms")
-        print(f"Average RTT: {totalRTTs/successful_pings} ms")
-        print(f"Max RTT: {maxRTT}")
-        print(f"Min RTT: {minRTT}\n")
+    print("\n---------------------------------------------------------------------")
+    print(f"Packet Loss: {(((total_pings - len(rtt_list)) / total_pings) * 100)}% (Success: {len(rtt_list)}/{total_pings})")
+    print(f"Total RTT for {len(rtt_list)} pings: {sum(rtt_list)} ms")
+    print(f"Average RTT: {sum(rtt_list)/len(rtt_list)} ms")
+    print(f"Max RTT: {max(rtt_list)} ms")
+    print(f"Min RTT: {min(rtt_list)} ms")
+    print(f"RTT Standard Deviation: {statistics.stdev(rtt_list)} ms")
+    # Calculating the 'jitter', which is the variability between successive RTTs
+    if len(rtt_list) > 1:
+        jitters = [abs(rtt_list[i] - rtt_list[i-1]) for i in range(1, len(rtt_list))]
+        average_jitter = sum(jitters) / len(jitters)
+    else: 
+        average_jitter = 0  # Less than 2 pings
+    print(f"Jitter: {average_jitter} ms")
+    print("---------------------------------------------------------------------\n")
 
-def calcRTTs(cur_rtt: int) -> None:
-    ''' Updates the total, minimum, and max RTTs (global) for end statistics
-    Parameters:
-    cur_rtt- The current rtt'''
-    global totalRTTs, minRTT, maxRTT, successful_pings
-    if minRTT == 0 or cur_rtt < minRTT:
-        minRTT = cur_rtt
-    if maxRTT == 0 or cur_rtt > maxRTT:
-        maxRTT = cur_rtt
-    totalRTTs += cur_rtt
-    successful_pings += 1  # Aid in calculating packet loss, if RTT is calculated then successful
+    return delay
 
-# Test Program
-total_pings, successful_pings, totalRTTs, minRTT, maxRTT = 0, 0, 0, 0, 0
-HOST = "jjmccauley.com"
-# HOST = "127.0.0.1"  # Local Host
-TIMEOUT = 1  # Default value for now
-ping(HOST, timeout=TIMEOUT)  # Testing own website
+# Adding capability for command line arguments
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="IPMP Pinger")  # Adding Argument Parser
+    parser.add_argument("host", nargs="?", type=str, default='127.0.0.1', help="Hostname or IP address to ping (default: 127.0.0.1)")  # Hostname Argument
+    parser.add_argument("timeout", nargs="?", type=float, default=1, help="Timeout in seconds for each ping (default: 1)")  # Timeout Argument
+    parser.add_argument("pings", nargs="?", type=int, default=8, help="Number of total pings to send (default: 8)")  # Number Pings Argument
+    args = parser.parse_args()
+
+# Testing Program
+HOST = args.host
+TIMEOUT = args.timeout
+NUM_PINGS = args.pings
+    
+ping(host=HOST, timeout=TIMEOUT, NUM_PINGS=NUM_PINGS)
