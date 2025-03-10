@@ -175,7 +175,7 @@ def ping(host: str = "127.0.0.1", timeout: float = 1, NUM_PINGS: int = 10**100) 
         print("\nPinging ended by user (keyboard interrupt)")
     print("\n---------------------------------------------------------------------")
     print(f"Packet Loss: {(((total_pings - len(rtt_list)) / total_pings) * 100)}% (Success: {len(rtt_list)}/{total_pings})")
-    if len(rtt_list == 0): return delay  # Avoid dividing by 0 errors
+    if len(rtt_list) == 0: return delay  # Avoid dividing by 0 errors
     print(f"Total RTT for {len(rtt_list)} pings: {sum(rtt_list)} ms")
     print(f"Average RTT: {sum(rtt_list)/len(rtt_list)} ms")
     print(f"Max RTT: {max(rtt_list)} ms")
