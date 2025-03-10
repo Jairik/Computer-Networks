@@ -1,27 +1,34 @@
 ''' Skeleton Code - just need to fill in the blanks basically '''
-from socket import *
-import os
-import sys
-import struct
-import time
-import select
-import binascii
+from socket import *  # Low-level networking (sockets)
+import os  # Retreive pids
+import sys  # Check the system platform
+import struct  # Packing/unpacking binary data into C-style structs
+import time  # Timing
+import select  # Monitoring socket events
 
-ICMP_ECHO_REQUEST = 8
+ICMP_ECHO_REQUEST = 8  # IPCM type for Echo requests
 
-def checksum(string):
+def checksum(source_string) -> int:
+    ''' Computes the internet checksum used by ICMP for error detection
+        Parameter: source_string- Represents binary data for packet (ICMP header & data) 
+        Returns: The 16-bit checksum, used for error detection '''
+    
+    # Convert to bytes if needed
+    if isinstance(source_string, str):
+        source_string = source_string.encode()
+    
     csum = 0
-    countTo = (len(string) // 2) * 2
+    countTo = (len(source_string) // 2) * 2
     count = 0
 
     while count < countTo:
-        thisVal = ord(string[count + 1]) * 256 + ord(string[count])
+        thisVal = ord(source_string[count + 1]) * 256 + source_string[count]
         csum = csum + thisVal
         csum = csum & 0xffffffff
         count = count + 2
 
-    if countTo < len(string):
-        csum = csum + ord(string[len(string) - 1])
+    if countTo < len(source_string):
+        csum = csum + ord(source_string[len(source_string) - 1])
         csum = csum & 0xffffffff
 
     csum = (csum >> 16) + (csum & 0xffff)
@@ -32,7 +39,15 @@ def checksum(string):
     
     return answer
 
-def receiveOnePing(mySocket, ID, timeout, destAddr):
+def receiveOnePing(mySocket: socket, ID: int, timeout: float, destAddr: str) -> str:
+    ''' Waits for an ICMP Echo Reply (pong), extracting the response header, verified ID, and calculates RTT if valid
+    Parameters:
+    mySocket- The raw socket used to receive packets
+    ID- Identifier for packets
+    timeout- Maximum time to wait for a response before timing out
+    destAddr- Distrination IP address being pinged 
+    Returns: A string message '''
+    
     timeLeft = timeout
 
     while True:
@@ -58,7 +73,12 @@ def receiveOnePing(mySocket, ID, timeout, destAddr):
         if timeLeft <= 0:
             return "Request timed out."
 
-def sendOnePing(mySocket, destAddr, ID):
+def sendOnePing(mySocket: socket, destAddr: str, ID: int) -> None:
+    ''' Constructs & Sends an ICMP Echo Request with a timestamp, computing checksum and sending it to its destination
+    Parameters:
+    mySocket- The raw socket used to send packets
+    destAddr- Destination IP address
+    ID: Identifier for packets '''
     # Header is type (8), code (8), checksum (16), id (16), sequence (16)
     myChecksum = 0
 
@@ -68,7 +88,7 @@ def sendOnePing(mySocket, destAddr, ID):
     data = struct.pack("d", time.time())
 
     # Calculate the checksum on the data and the dummy header.
-    myChecksum = checksum(str(header + data))
+    myChecksum = checksum(header + data)
 
     # Get the right checksum, and put in the header
     if sys.platform == 'darwin':
@@ -81,7 +101,12 @@ def sendOnePing(mySocket, destAddr, ID):
     packet = header + data
     mySocket.sendto(packet, (destAddr, 1))  # AF_INET address must be tuple, not str
 
-def doOnePing(destAddr, timeout):
+def doOnePing(destAddr: str, timeout: int) -> str:
+    ''' Creates a raw socket, sends a ping, waits for a response, records delay, and closes socket
+    Parameters:
+    destAddr- Destination IP address being pinged 
+    timeout- Max time to wait for a response
+    Returns: The response message (RTT or timeout message) '''
     icmp = getprotobyname("icmp")
     # SOCK_RAW is a powerful socket type
     mySocket = socket(AF_INET, SOCK_RAW, icmp)
@@ -93,12 +118,15 @@ def doOnePing(destAddr, timeout):
     mySocket.close()
     return delay
 
-def ping(host, timeout=1):
+def ping(host: str, timeout: float =1) -> None:
+    ''' Resolves a hostname to an IP, repeatedly (indefinitely) pings every second, prints response time
+    Parameters:
+    host- The hostname or IP address to ping
+    timeout: Timeout in seconds for each ping'''
     # timeout=1 means: If one second goes by without a reply from the server,
     # the client assumes that either the client's ping or the server's pong is lost
     dest = gethostbyname(host)
-    print("Pinging " + dest + " using Python:")
-    print("")
+    print("Pinging " + dest + " using Python:\n")
 
     # Send ping requests to a server separated by approximately one second
     while True:
