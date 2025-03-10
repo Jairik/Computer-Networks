@@ -22,13 +22,13 @@ def checksum(source_string) -> int:
     count = 0
 
     while count < countTo:
-        thisVal = ord(source_string[count + 1]) * 256 + source_string[count]
+        thisVal = source_string[count + 1] * 256 + source_string[count]
         csum = csum + thisVal
         csum = csum & 0xffffffff
         count = count + 2
 
     if countTo < len(source_string):
-        csum = csum + ord(source_string[len(source_string) - 1])
+        csum = csum + source_string[len(source_string) - 1]
         csum = csum & 0xffffffff
 
     csum = (csum >> 16) + (csum & 0xffff)
@@ -60,14 +60,29 @@ def receiveOnePing(mySocket: socket, ID: int, timeout: float, destAddr: str) -> 
 
         timeReceived = time.time()
         recPacket, addr = mySocket.recvfrom(1024)
+        
+        # Ensure that the packet is at least 28 bytes (20 byte IP header, 8 byte ICMP header)
+        if len(recPacket) < 28:
+            return "Packet is too short"
 
         '''TODO'''
-        # Fill in start
+        # Extract the ICMP Header
+        icmpHeader = recPacket[20:28]  # Extract 8-byte ICMP Header, skipping 20-byte IP header
+        icmpType, icmpCode, icmpChecksum, packetID, sequence = struct.unpack("bbHHh", icmpHeader)
+        # Where icmpType should be 0 for Echo Reply, and packetID should match the ID from packet sent
         
-        
-        # Fetch the ICMP header from the IP packet
         '''TODO'''
-        # Fill in end
+        # Validate the ICMP Response
+        if icmpType != 0 or packetID != ID:
+            return "Not a valid ping response"
+        
+        # Ensure the packet has enough bytes for a timestamp
+        if len(recPacket) < 28 + struct.calcsize("d"):
+            return "Received packet does not contain a valid timestamp"
+        
+        # Extract the timestamp and compute RTT (in ms)
+        timeSent = struct.unpack("d", recPacket[28:28 + struct.calcsize("d")])[0]  # Extracting the timestamp
+        rtt = (timeReceived - timeSent) * 1000  # Computing RTT & converting to ms
 
         timeLeft = timeLeft - howLongInSelect
         if timeLeft <= 0:
@@ -108,7 +123,6 @@ def doOnePing(destAddr: str, timeout: int) -> str:
     timeout- Max time to wait for a response
     Returns: The response message (RTT or timeout message) '''
     icmp = getprotobyname("icmp")
-    # SOCK_RAW is a powerful socket type
     mySocket = socket(AF_INET, SOCK_RAW, icmp)
     myID = os.getpid() & 0xFFFF  # Return the current process ID
 
@@ -129,8 +143,14 @@ def ping(host: str, timeout: float =1) -> None:
     print("Pinging " + dest + " using Python:\n")
 
     # Send ping requests to a server separated by approximately one second
-    while True:
-        delay = doOnePing(dest, timeout)
-        print(delay)
-        time.sleep(1)  # one second
-    return delay
+    try:
+        while True:
+            delay = doOnePing(dest, timeout)
+            print(delay)
+            time.sleep(1)  # one second
+        return delay
+    except KeyboardInterrupt:
+        print("\nPinging ended by user (keyboard interrupt)")
+
+# Test Program
+ping("google.com")
