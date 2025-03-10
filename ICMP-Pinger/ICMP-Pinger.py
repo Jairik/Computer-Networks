@@ -56,9 +56,9 @@ def receiveOnePing(mySocket: socket, ID: int, timeout: float, destAddr: str) -> 
         howLongInSelect = (time.time() - startedSelect)
 
         if whatReady[0] == []:  # Timeout
-            return "Request timed out."
+            return "Request timed out when receiving (start)."
 
-        timeReceived = time.time()
+        timeReceived = time.perf_counter()
         recPacket, addr = mySocket.recvfrom(1024)
         
         # Ensure that the packet is at least 28 bytes (20 byte IP header, 8 byte ICMP header)
@@ -83,10 +83,17 @@ def receiveOnePing(mySocket: socket, ID: int, timeout: float, destAddr: str) -> 
         # Extract the timestamp and compute RTT (in ms)
         timeSent = struct.unpack("d", recPacket[28:28 + struct.calcsize("d")])[0]  # Extracting the timestamp
         rtt = (timeReceived - timeSent) * 1000  # Computing RTT & converting to ms
-
+        
+        # Ensure time elasped doesn't cause timeout
         timeLeft = timeLeft - howLongInSelect
         if timeLeft <= 0:
-            return "Request timed out."
+            return "Request timed out when receiving."
+        
+        # Update RTTs (total, min, max)
+        calcRTTs(rtt)
+        
+        # Return message containing rtt
+        return f"Reply from {destAddr}: time={rtt}ms"
 
 def sendOnePing(mySocket: socket, destAddr: str, ID: int) -> None:
     ''' Constructs & Sends an ICMP Echo Request with a timestamp, computing checksum and sending it to its destination
@@ -100,7 +107,7 @@ def sendOnePing(mySocket: socket, destAddr: str, ID: int) -> None:
     # Make a dummy header with a 0 checksum
     # struct -- Interpret strings as packed binary data
     header = struct.pack("bbHHh", ICMP_ECHO_REQUEST, 0, myChecksum, ID, 1)
-    data = struct.pack("d", time.time())
+    data = struct.pack("d", time.perf_counter())
 
     # Calculate the checksum on the data and the dummy header.
     myChecksum = checksum(header + data)
@@ -137,6 +144,7 @@ def ping(host: str, timeout: float =1) -> None:
     Parameters:
     host- The hostname or IP address to ping
     timeout: Timeout in seconds for each ping'''
+    global pings
     # timeout=1 means: If one second goes by without a reply from the server,
     # the client assumes that either the client's ping or the server's pong is lost
     dest = gethostbyname(host)
@@ -146,11 +154,29 @@ def ping(host: str, timeout: float =1) -> None:
     try:
         while True:
             delay = doOnePing(dest, timeout)
+            pings += 1
             print(delay)
             time.sleep(1)  # one second
         return delay
     except KeyboardInterrupt:
         print("\nPinging ended by user (keyboard interrupt)")
+        print(f"Total RTT for {pings} pings: {totalRTTs} ms")
+        print(f"Average RTT: {totalRTTs/pings} ms")
+        print(f"Max RTT: {maxRTT}")
+        print(f"Min RTT: {minRTT}")
+
+def calcRTTs(cur_rtt: int) -> None:
+    ''' Updates the total, minimum, and max RTTs (global) for end statistics
+    Parameters:
+    cur_rtt- The current rtt'''
+    global totalRTTs, minRTT, maxRTT
+    if minRTT == 0 or cur_rtt < minRTT:
+        minRTT = cur_rtt
+    if maxRTT == 0 or cur_rtt > maxRTT:
+        maxRTT = cur_rtt
+    totalRTTs += cur_rtt
 
 # Test Program
-ping("google.com")
+pings, totalRTTs, minRTT, maxRTT = 0, 0, 0, 0
+ping("jjmccauley.com")  # Testing own website
+# ping('127.0.0.1', timeout=1)  # Pinging local host for testing
