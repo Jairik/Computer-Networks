@@ -70,9 +70,18 @@ def receiveOnePing(mySocket: socket, ID: int, timeout: float, destAddr: str) -> 
         icmpType, icmpCode, icmpChecksum, packetID, sequence = struct.unpack("bbHHh", icmpHeader)
         # Where icmpType should be 0 for Echo Reply, and packetID should match the ID from packet sent
         
-        # Validate the ICMP Response
-        if icmpType != 0 or packetID != ID:
-            return "Not a valid ping response"
+        # Validate the ICMP Response 
+        if icmpType != 0:
+            # Interpret ICMP Error Code
+            if icmpType == 3:
+                if icmpCode == 0:
+                    return "Destination Network Unreachable"
+                elif icmpCode == 1:
+                    return "Destination Host Unreachable"
+                else:
+                    return f"Destination Unreachable, code {icmpCode}"
+        elif packetID != ID:
+            return "Packet ID does not match, ignoring."
         
         # Ensure the packet has enough bytes for a timestamp
         if len(recPacket) < 28 + struct.calcsize("d"):
@@ -160,8 +169,8 @@ def ping(host: str, timeout: float =1) -> None:
     except KeyboardInterrupt:
         print("\nPinging ended by user (keyboard interrupt)")
         print(f"Packet Loss: {(((total_pings - successful_pings) / total_pings) * 100)}% (Success: {successful_pings}/{total_pings})")
-        print(f"Total RTT for {total_pings} pings: {totalRTTs} ms")
-        print(f"Average RTT: {totalRTTs/total_pings} ms")
+        print(f"Total RTT for {successful_pings} pings: {totalRTTs} ms")
+        print(f"Average RTT: {totalRTTs/successful_pings} ms")
         print(f"Max RTT: {maxRTT}")
         print(f"Min RTT: {minRTT}\n")
 
