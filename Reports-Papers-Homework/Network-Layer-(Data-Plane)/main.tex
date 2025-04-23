@@ -1,0 +1,347 @@
+\documentclass[colorlinks=true, allcolors=blue]{article}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{verbatim}
+\usepackage{placeins}    % for \FloatBarrier
+\usepackage{setspace}    % to customize line spacing
+
+% Drawing diagrams
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+
+% Table stuff
+\usepackage{array}
+\newcolumntype{L}{>{\ttfamily}l<{\normalfont}}
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{caption}
+
+% Removing Indents & setting line spaces
+\setlength{\parindent}{0pt}
+\setstretch{1.25}
+
+% Title, Author, Problems/Date
+\title{Computer Networks - Network Layer (Data Plane)}
+\author{JJ McCauley \\ 4/22/25}
+\date{Chapter 4's Problems: 8, 9, 17}
+
+\begin{document}
+\maketitle
+
+% Question 8
+\setcounter{section}{7}
+\section{Longest Prefix Matching in Datagram Forwarding}
+We are given a datagram network using 32-bit host addresses, assuming that a router has four links (numbered 0-3), and packets are forwarded to the link interfaces as:
+
+% Thank you chatGPT for turning this into a table
+\renewcommand{\arraystretch}{1.5}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Destination Address Range} & \textbf{Link Interface} \\
+\hline
+11100000 00000000 00000000 00000000 & \\
+through & 0 \\
+11100000 00111111 11111111 11111111 & \\
+\hline
+11100000 01000000 00000000 00000000 & \\
+through & 1 \\
+11100000 01000000 11111111 11111111 & \\
+\hline
+11100000 01000001 00000000 00000000 & \\
+through & 2 \\
+11100001 01111111 11111111 11111111 & \\
+\hline
+otherwise & 3 \\
+\hline  
+\end{tabular}
+\end{center}
+
+\subsection{Forwarding Table with Five Entries, Longest Prefix Matching, and Correct Link Forwarding Interfaces}
+In order to complete this question, we must first understand that each interface handles traffic for a specific range of destination addresses. Additionally, \textit{longest prefix matching} means that, for any given destination address, the router matches the entry with the most bits in common (from the left). \\
+
+Within the table, we can interpret the address ranges as range starts and range ends. For example, interface 0 has a range start of 11100000 00000000 00000000 00000000, and a range end of 11100000 00111111 11111111 11111111. Using this, we can then find the CIDR Prefixes in the form \textbf{A.B.C.D/N}. \\
+
+\subsubsection{Determining \textit{N} (Number of Shared Bits)}
+To determine this, we must determine how many bits each address shares:
+
+\renewcommand{\arraystretch}{1.5}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Destination Address Range} & \textbf{Bits Shared} \\
+\hline
+\textbf{11100000 00}000000 00000000 00000000 & \\
+through & 10 \\
+\textbf{11100000 00}111111 11111111 11111111 & \\
+\hline
+\textbf{11100000 01000000} 00000000 00000000 & \\
+through & 16 \\
+\textbf{11100000 01000000} 11111111 11111111 & \\
+\hline
+\textbf{1110000}0 01000001 00000000 00000000 & \\
+through & 7 \\
+\textbf{1110000}1 01111111 11111111 11111111 & \\
+\hline
+otherwise & - \\
+\hline  
+\end{tabular}
+\end{center}
+
+These numbers of bit shared gives us the N in the CIDR notation of \textbf{A.B.C.D/N}. In order to find the first part (A.B.C.D), we must convert all of these ranges into dotted decimals.
+
+\subsubsection{Determining \textit{A.B.C.D} (Dotted Decimals of IPs)}
+
+In order to find the A.B.C.D portion of the prefix, we will find the dotted decimal of the shared bits. \\
+
+For instance, we will walk through interface 0. For this address range, there are 10 shared bits, being:
+
+\begin{center}\textbf{11100000 00}\end{center}
+
+Then, we will divide up the segments into octets (8-bit segments). Any segment that does not match, we will simply zero out. This gives us \textit{Octet 1} as 11100000, \textit{Octet 2} as 01000000, and \textit{Octet 3 \& 4} as 00000000. \\
+
+We can then use convert these binary octets to decimals, to get \textit{Octet 1} as \textbf{224}, \textit{Octet 2} as \textbf{64}, and \textit{Octet 3 \& 4} remain as \textbf{0}. Putting this into the CIDR notation, we get \textbf{224.64.0.0}. By doing these calculations on the remaining interfaces, we can derive the table:
+
+\renewcommand{\arraystretch}{1.5}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Destination Address Range} & \textbf{Dotted Decimals (Tentative CIDR Notation, excluding N)} \\
+\hline
+\textbf{11100000 00}000000 00000000 00000000 & \\
+through & 224.64.0.0 \\
+\textbf{11100000 00}111111 11111111 11111111 & \\
+\hline
+\textbf{11100000 01000000} 00000000 00000000 & \\
+through & 224.0.0.0 \\
+\textbf{11100000 01000000} 11111111 11111111 & \\
+\hline
+\textbf{1110000}0 01000001 00000000 00000000 & \\
+through & 224.0.0.0 \\
+\textbf{1110000}1 01111111 11111111 11111111 & \\
+\hline
+otherwise & 0.0.0.0 \\
+\hline  
+\end{tabular}
+\end{center}
+
+\subsubsection{Putting it all together - Forwarding Table}
+
+Now that we know the \textit{N} value and the \textit{A.B.C.D} format, we can combine them to get the following notations:
+
+\renewcommand{\arraystretch}{1.5}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Destination Address Range} & \textbf{Dotted Decimals (Tentative CIDR Notation, excluding N)} \\
+\hline
+\textbf{11100000 00}000000 00000000 00000000 & \\
+through & 224.64.0.0/10 \\
+\textbf{11100000 00}111111 11111111 11111111 & \\
+\hline
+\textbf{11100000 01000000} 00000000 00000000 & \\
+through & 224.0.0.0/16 \\
+\textbf{11100000 01000000} 11111111 11111111 & \\
+\hline
+\textbf{1110000}0 01000001 00000000 00000000 & \\
+through & 224.0.0.0/7 \\
+\textbf{1110000}1 01111111 11111111 11111111 & \\
+\hline
+otherwise & 0.0.0.0/0 \\
+\hline  
+\end{tabular}
+\end{center}
+
+However, \textbf{there is an issue here}. We are asked to \textit{provide five table entries}, with there currently only being \textit{four}. In order to satisfy this constraint, we can \textit{break down interface 2} into two separate entries with masks (\textit{N}) of 8. This is because we already have two more-specific entries (interfaces 0 and 1), which observe a smaller range of bit differences. Additionally, interface 8 only observes the first 7 bits, we can provide separate cases for the 8th bit. This not only satisfies the constraint, but also provides more specific routes for the bits which could improve performance.
+
+Looking at interface two, we see that the range is ultimately 224.0.0.0 to 225.225.225.225 (since the 8th and all following bits are not 'matching'). We can therefore break this into two separate ranges of 224.225.225.225 to 225.225.225.225, resulting in the additional entries of:
+\begin{center}
+    224.0.0.0/8  (Interface 2) \\
+    225.0.0.0/8  (Interface 2)
+\end{center}
+
+Using these new entries, we can create the \textbf{final forwarding table} of:
+
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Prefix}    & \textbf{Mask (\textit{N})} & \textbf{Interface} \\
+\hline
+224.0.0.0           & /10           & 0                  \\
+\hline
+224.64.0.0          & /16           & 1                  \\
+\hline
+224.0.0.0  & /8  & 2         \\
+\hline
+225.0.0.0  & /8   & 2         \\
+\hline
+0.0.0.0             & /0            & 3 (default)        \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Forwarding Decisions via Longest-Prefix Matching}
+
+We are asked to determine the appropriate link interfaces of datagrams using the following destination addresses.
+\begin{center}
+    11001000 10010001 01010001 01010101 \\
+    11100001 01000000 11000011 00111100 \\
+    11100001 10000000 00010001 01110111 
+\end{center}
+
+Since we have already described the \textbf{forwarding table} (above), the process to determine these interfaces is very simple. This process will only involve two steps: converting the binaries to decimals (prefixes) and mapping to the correct prefix/interface. \\
+
+Firstly, we will map convert each binary segment to their respective decimal prefixes such that:
+\begin{center}
+    11001000 10010001 01010001 01010101 = \textbf{200.145.81.85}\\
+    11100001 01000000 11000011 00111100 = \textbf{225.64.195.60}\\
+    11100001 10000000 00010001 01110111 = \textbf{225.128.17.119}
+\end{center}
+
+Then, we must map each decimal prefix to each entry in the forwarding table, checking the entries in order of longest prefix (largest mask, \textit{n}). Below is a table demonstrating this:
+
+\begin{table}[ht]
+  \centering
+  \resizebox{\textwidth}{!}{%
+    \begin{tabular}{|L|c|c|c|c|c|}
+      \hline
+      \textbf{Prefix} 
+        & \textbf{224.64.0.0/16} 
+        & \textbf{224.0.0.0/10} 
+        & \textbf{224.0.0.0/8} 
+        & \textbf{225.0.0.0/8} 
+        & \textbf{0.0.0.0/0} \\
+      \hline
+      200.145.81.85 & X & X & X & X & Match\\ 
+      \hline
+      225.64.195.60 & X & X & X & Match & \\ 
+      \hline
+      225.128.17.119 & X & X & X & Match & \\ 
+      \hline
+    \end{tabular}%
+  }
+\end{table}
+
+As shown above, each entry is checked (by mask) until an appropriate one is reached. Therefore, by matching these decimal prefixed with the \textbf{forwarding table above}, we can derive the following \textbf{interface mapping}:
+\begin{center}
+    11001000 10010001 01010001 01010101 maps to \textbf{Interface 3 (default)}\\
+    11100001 01000000 11000011 00111100 maps to \textbf{Interface 2}\\
+    11100001 10000000 00010001 01110111 maps to \textbf{Interface 2}
+\end{center}
+% Finally done question 8
+
+% Question 9
+\section{Address Range Mapping for 8-bit Forwarding Table}
+We are given a datagram network with an 8-bit forwarding addresses and the following forward table (assuming the router uses longest prefix matching):
+
+\renewcommand{\arraystretch}{1.5}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Prefix Match} & \textbf{Interface} \\
+\hline
+00 & 0 \\
+\hline
+010 & 1 \\
+\hline  
+011 & 2 \\
+\hline
+10 & 2\\
+\hline
+11 & 3 \\
+\hline  
+\end{tabular}
+\end{center}
+
+In order to find the associated range of destination host addresses and the number of addresses in each range, we firstly must understand that this is representing 8-bit numbers (\textit{xxxxxxxx}). Using this information, we can determine the ranges (and therefore the counts), then map those onto the appropriate interfaces using the provided forwarding table. \\
+
+Firstly, to retrieve the counts, we must find the minimum and maximum potential values of the binary. We can do this but subbing in 0 and 1 to find the minimum and maximum, respectively. \\
+
+For example, the first prefix match (00xxxxxx) can be 00000000 as the minimum (decimal value of 0) or 00111111 as the maximum (decimal value of 63). Therefore, we know the range is 0-63, making the count 64 (0 and 63 inclusive). Under this same logic, we can derive the following values:
+
+% Monospaced column type for binary prefixes
+\newcolumntype{P}{>{\ttfamily}l<{\normalfont}}
+
+\begin{table}[ht]
+  \centering
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{|P|c|c|c|}
+    \hline
+    \textbf{Prefix} & \textbf{Addresses Covered} & \textbf{Decimal Range} & \textbf{Count} \\
+    \hline
+    00   & 00xxxxxx & 0--63     & 64 \\
+    \hline
+    010  & 010xxxxx & 64--95    & 32 \\
+    \hline
+    011  & 011xxxxx & 96--127   & 32 \\
+    \hline
+    10   & 10xxxxxx & 128--191  & 64 \\
+    \hline
+    11   & 11xxxxxx & 192--255  & 64 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+Now, we can map these ranges and counts onto their respective interfaces, such that:
+\begin{center}
+    \textbf{Interface 0}'s range is 0-63 with a count of 64
+    \textbf{Interface 1}'s range is 64-95 with a count of 32
+    \textbf{Interface 2}'s range is 96-127 with a count of 32
+    \textbf{Interface 2}'s range is also 128-191 with a count of 64
+    \textbf{Interface 0}'s range is 192-255 with a count of 64
+\end{center}
+
+By combining both of Interface 2's metrics, we obtain the \textbf{final table} of:
+
+% Monospaced column type for interface numbers
+\newcolumntype{P}{>{\ttfamily}l<{\normalfont}}
+
+\begin{table}[ht]
+  \centering
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{|P|c|c|c|}
+    \hline
+    \textbf{Interface} & \textbf{Prefix(es)} & \textbf{Decimal Range} & \textbf{Count} \\
+    \hline
+    \textbf{0}   & 00 & 0--63     & 64 \\
+    \hline
+    \textbf{1}  & 010 & 64--95    & 32 \\
+    \hline
+    \textbf{2}  & 011, 10 & 96--191   & 96 \\
+    \hline
+    \textbf{3}   & 10 & 192--255  & 64 \\
+    \hline
+  \end{tabular}
+\end{table}
+% End of question 9
+
+% Question 17
+\setcounter{section}{16}
+\section{Datagram Count for Sending a 5-Million Byte MP3}
+We are tasked with determining the number of datagrams required to send a 5-million byte MP3 file, given that datagrams are limited to 1500 bytes (including the header) and there is a 20-byte IP header. \\
+
+This problem is extraordinarily simple once we understand the context. Firstly, we must calculate the amount of data in each diagram. Since the only additional overhead to the data would be the IP header, this can be calculated as:
+\[
+\text{Data per Datagram} = \text{Max Datagram Size} - \text{IP Header Size} = 1500 - 20 = 1480 \text{ bytes}
+\]
+
+Then, since we know that total file size of the MP3 file is 5,000,000 bytes, we can directly determine the number of datagrams with the equation:
+\[
+\text{Datagram Count} = \frac{\text{Total File Size}}{\text{Datagram Size}} = \frac{5000000 \text{ bytes}}{1480 \text{ bytes}} \approx 3378.38
+\]
+Since we can not have a partial datagram, this will be \textit{rounded up} to the nearest whole number. Therefore, \textbf{3379 datagrams} are required to send this 5,000,000 byte MP3 file with payloads of 1480 bytes each.
+
+
+\clearpage  % Ensure that images successfully load in
+\end{document}
